@@ -1,0 +1,172 @@
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+from gtts import gTTS
+import os
+import pygame
+
+pygame.mixer.init()
+
+gares = ["Casablanca", "Rabat", "Fès", "Marrakech"]
+voyages = [("Casablanca", "Rabat", "09:00"), ("Rabat", "Fès", "13:00")]
+employes = ["Ahmed", "Youssef", "Fatima"]
+reservations = []
+avis_clients = []
+candidatures = []
+
+annonces = [
+    ("القطار القادم من الدار البيضاء سيصل إلى الرصيف رقم 2.", "Le train en provenance de Casablanca est attendu voie 2."),
+    ("القطار المتجه إلى مراكش سيغادر بعد عشر دقائق.", "Le train à destination de Marrakech partira dans 10 minutes."),
+    ("يرجى عدم ترك الأمتعة دون رقابة.", "Veuillez ne pas laisser vos bagages sans surveillance."),
+    ("القطار القادم من فاس قد وصل في الوقت المحدد.", "Le train en provenance de Fès est arrivé à l'heure."),
+    ("يتم حالياً الصعود إلى قطار TGV المتجه إلى طنجة.", "Le TGV à destination de Tanger est en cours d'embarquement."),
+    ("هناك خدمة تقديم الطعام متوفرة على متن القطار.", "Un service de restauration est disponible dans le train."),
+    ("ننصح بارتداء الكمامة داخل القطار.", "Le port du masque est recommandé à bord du train."),
+    ("شكراً للحفاظ على نظافة العربات.", "Merci de respecter la propreté dans les wagons."),
+    ("تم إلغاء القطار رقم 2032.", "Le train numéro 2032 a été annulé."),
+    ("يرجى التحقق من التذاكر قبل الصعود إلى القطار.", "Les billets sont à vérifier avant l'embarquement.")
+]
+
+def lire_annonce(texte_ar, texte_fr):
+    try:
+        pygame.mixer.music.load("SNCF.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            continue
+
+        tts_ar = gTTS(text=texte_ar, lang='ar')
+        tts_ar.save("annonce_ar.mp3")
+        pygame.mixer.music.load("annonce_ar.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            continue
+        os.remove("annonce_ar.mp3")
+
+        tts_fr = gTTS(text=texte_fr, lang='fr')
+        tts_fr.save("annonce_fr.mp3")
+        pygame.mixer.music.load("annonce_fr.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            continue
+        os.remove("annonce_fr.mp3")
+
+    except Exception as e:
+        print("Erreur lors de la lecture de l'annonce:", e)
+
+def supprimer_annonce(index, fenetre):
+    if 0 <= index < len(annonces):
+        del annonces[index]
+        fenetre.destroy()
+        afficher_annonces()
+
+def afficher_annonces():
+    fen = tk.Toplevel()
+    fen.title("Annonces Bilingues")
+    for i, (ar, fr) in enumerate(annonces):
+        frame = tk.Frame(fen)
+        frame.pack(fill="x", pady=2)
+        extrait = fr[:40] + "..." if len(fr) > 40 else fr
+        tk.Button(frame, text=extrait, command=lambda a=ar, f=fr: lire_annonce(a, f)).pack(side="left", padx=5)
+        tk.Button(frame, text="Supprimer", fg="red", command=lambda idx=i: supprimer_annonce(idx, fen)).pack(side="right", padx=5)
+
+def ajouter_gare():
+    gare = simpledialog.askstring("Ajouter Gare", "Nom de la gare:")
+    if gare:
+        gares.append(gare)
+        messagebox.showinfo("Succès", f"Gare '{gare}' ajoutée.")
+
+def ajouter_voyage():
+    depart = simpledialog.askstring("Voyage", "Départ:")
+    arrivee = simpledialog.askstring("Voyage", "Arrivée:")
+    heure = simpledialog.askstring("Voyage", "Heure:")
+    if depart and arrivee and heure:
+        voyages.append((depart, arrivee, heure))
+        messagebox.showinfo("Succès", "Voyage ajouté.")
+
+def ajouter_employe():
+    nom = simpledialog.askstring("Ajouter Employé", "Nom de l'employé:")
+    if nom:
+        employes.append(nom)
+        messagebox.showinfo("Succès", f"Employé '{nom}' ajouté.")
+
+def voir_candidatures():
+    fen = tk.Toplevel()
+    fen.title("Candidatures")
+    for c in candidatures:
+        tk.Label(fen, text=c).pack()
+
+def voir_avis():
+    fen = tk.Toplevel()
+    fen.title("Avis des clients")
+    for a in avis_clients:
+        tk.Label(fen, text=a).pack()
+
+def espace_admin():
+    fenetre = tk.Toplevel()
+    fenetre.title("Espace Admin")
+    tk.Button(fenetre, text="Ajouter Gare", command=ajouter_gare).pack(pady=5)
+    tk.Button(fenetre, text="Ajouter Voyage", command=ajouter_voyage).pack(pady=5)
+    tk.Button(fenetre, text="Ajouter Employé", command=ajouter_employe).pack(pady=5)
+    tk.Button(fenetre, text="Annonces", command=afficher_annonces).pack(pady=5)
+    tk.Button(fenetre, text="Candidatures", command=voir_candidatures).pack(pady=5)
+    tk.Button(fenetre, text="Voir Avis", command=voir_avis).pack(pady=5)
+
+def voir_voyages():
+    fen = tk.Toplevel()
+    fen.title("Liste des Voyages")
+    for v in voyages:
+        tk.Label(fen, text=f"{v[0]} vers {v[1]} à {v[2]}").pack()
+
+def reserver():
+    nom = simpledialog.askstring("Réservation", "Votre nom:")
+    voyage = simpledialog.askstring("Réservation", "Destination:")
+    if nom and voyage:
+        reservations.append((nom, voyage))
+        messagebox.showinfo("Succès", "Réservation enregistrée.")
+
+def voir_reservations():
+    fen = tk.Toplevel()
+    fen.title("Vos Réservations")
+    for r in reservations:
+        tk.Label(fen, text=f"{r[0]} → {r[1]}").pack()
+
+def laisser_avis():
+    avis = simpledialog.askstring("Avis", "Votre avis/plaintes:")
+    if avis:
+        avis_clients.append(avis)
+        messagebox.showinfo("Merci", "Avis reçu.")
+
+def postuler():
+    nom = simpledialog.askstring("Candidature", "Votre nom:")
+    poste = simpledialog.askstring("Candidature", "Poste désiré:")
+    if nom and poste:
+        candidatures.append(f"{nom} - {poste}")
+        messagebox.showinfo("Merci", "Candidature envoyée.")
+
+def espace_client():
+    fenetre = tk.Toplevel()
+    fenetre.title("Espace Client")
+    tk.Button(fenetre, text="Voir Voyages", command=voir_voyages).pack(pady=5)
+    tk.Button(fenetre, text="Réserver", command=reserver).pack(pady=5)
+    tk.Button(fenetre, text="Mes Réservations", command=voir_reservations).pack(pady=5)
+    tk.Button(fenetre, text="Donner Avis/Plaintes", command=laisser_avis).pack(pady=5)
+
+def menu_principal():
+    root = tk.Tk()
+    root.title("ONCF App")
+    root.geometry("300x350")
+
+    def verifier_admin():
+        mot_de_passe = simpledialog.askstring("Mot de passe", "Entrez le mot de passe admin:", show="*")
+        if mot_de_passe == "admin":
+            espace_admin()
+        else:
+            messagebox.showerror("Erreur", "Mot de passe incorrect")
+
+    tk.Label(root, text="Bienvenue sur l'application ONCF", font=("Arial", 14)).pack(pady=20)
+    tk.Button(root, text="Espace Admin", command=verifier_admin).pack(pady=10)
+    tk.Button(root, text="Espace Client", command=espace_client).pack(pady=10)
+    tk.Button(root, text="Postuler à un emploi", command=postuler).pack(pady=10)
+
+    root.mainloop()
+
+menu_principal()
